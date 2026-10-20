@@ -145,3 +145,80 @@ async def test_not_found_handling():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/api/repositories/non-existent-id")
         assert resp.status_code == 404
+
+@pytest.mark.anyio
+async def test_api_upload_zip_success():
+    import io, zipfile
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("calc.py", "def add(a, b):\n    return a + b\n")
+        zf.writestr("README.md", "# Test Project")
+    
+    files = {"file": ("test_project.zip", buf.getvalue(), "application/zip")}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/api/repositories/upload", files=files)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "test_project"
+        assert data["source_type"] == "zip"
+        assert data["file_count"] == 2
+        assert data["parsed_file_count"] == 1
+
+@pytest.mark.anyio
+async def test_api_upload_non_zip_rejected():
+    files = {"file": ("test.txt", b"plain text", "text/plain")}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/api/repositories/upload", files=files)
+        assert resp.status_code == 400
+        assert "Only .zip" in resp.json()["detail"]
+
+@pytest.mark.anyio
+async def test_api_upload_empty_zip_rejected():
+    files = {"file": ("empty.zip", b"", "application/zip")}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/api/repositories/upload", files=files)
+        assert resp.status_code == 400
+
+@pytest.mark.anyio
+async def test_api_github_import_invalid_url():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/api/repositories/github", json={"url": "not-a-url"})
+        assert resp.status_code == 400
+        assert "Invalid GitHub repository URL" in resp.json()["detail"]
+
+@pytest.mark.anyio
+async def test_api_github_import_not_found():
+    from unittest.mock import patch, AsyncMock, MagicMock
+    mock_resp = MagicMock()
+    mock_resp.status_code = 404
+    mock_resp.content = b"Not Found"
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mock_resp
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            resp = await client.post("/api/repositories/github", json={"url": "https://github.com/fake/nonexistent"})
+            assert resp.status_code == 400
+            assert "not found" in resp.json()["detail"].lower()
+
+@pytest.mark.anyio
+async def test_api_github_import_success_mocked():
+    import io, zipfile
+    from unittest.mock import patch, AsyncMock, MagicMock
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("app.py", "def run():\n    print('hello')\n")
+    
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.content = buf.getvalue()
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mock_resp
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            resp = await client.post("/api/repositories/github", json={"url": "https://github.com/testuser/mockrepo"})
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["name"] == "testuser/mockrepo"
+            assert data["source_type"] == "github"
+            assert data["file_count"] == 1
+

@@ -87,7 +87,10 @@ def detect_language(file_path: str) -> Optional[str]:
         
     # Check special filenames
     name = path_obj.name.lower()
-    if name in {"dockerfile", "makefile", "cmakelists.txt"}:
+    if name in {
+        "dockerfile", "makefile", "cmakelists.txt", "readme", "license",
+        "contributing", "authors", "changelog", "notice", "copying", "gemfile", "procfile"
+    }:
         return "text"
         
     # Check non-code text documents

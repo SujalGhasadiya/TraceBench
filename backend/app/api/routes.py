@@ -49,6 +49,25 @@ async def import_github_repo(request: GitHubImportRequest):
         repo_name, count, total_bytes, skipped = await download_and_extract_github_repo(
             request.url, workspace_dir, request.branch
         )
+        if count == 0:
+            shutil.rmtree(workspace_dir, ignore_errors=True)
+            raise HTTPException(
+                status_code=400,
+                detail="The repository was downloaded but contains no supported code files to index."
+            )
+
+        session = repo_store.index_workspace(
+            repo_id=repo_id,
+            repo_name=repo_name,
+            workspace_dir=workspace_dir,
+            source_type="github",
+            source_url=request.url,
+            initial_skipped=skipped
+        )
+        return session.metadata
+    except HTTPException:
+        shutil.rmtree(workspace_dir, ignore_errors=True)
+        raise
     except GitHubIngestionError as e:
         shutil.rmtree(workspace_dir, ignore_errors=True)
         raise HTTPException(status_code=400, detail=str(e))
@@ -56,49 +75,51 @@ async def import_github_repo(request: GitHubImportRequest):
         shutil.rmtree(workspace_dir, ignore_errors=True)
         raise HTTPException(status_code=500, detail=f"Unexpected ingestion failure: {str(e)}")
 
-    session = repo_store.index_workspace(
-        repo_id=repo_id,
-        repo_name=repo_name,
-        workspace_dir=workspace_dir,
-        source_type="github",
-        source_url=request.url,
-        initial_skipped=skipped
-    )
-    return session.metadata
-
 @router.post("/repositories/upload", response_model=RepositoryMetadata)
 async def upload_zip_repo(file: UploadFile = File(...)):
-    if not file.filename.lower().endswith(".zip"):
-        raise HTTPException(status_code=400, detail="Only .zip files are supported.")
+    filename = (file.filename or "").strip()
+    if not filename.lower().endswith(".zip"):
+        raise HTTPException(status_code=400, detail="Only .zip archive files are supported.")
 
     repo_id = str(uuid.uuid4())[:8]
     workspace_dir = settings.WORKSPACE_DIR / repo_id
-    repo_name = Path(file.filename).stem
+    repo_name = Path(filename).stem or "uploaded_repo"
 
     try:
         content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="The uploaded ZIP file is empty (0 bytes).")
         if len(content) > settings.MAX_UPLOAD_SIZE_BYTES:
             raise HTTPException(
                 status_code=400,
                 detail=f"Uploaded ZIP exceeds limit of {settings.MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB."
             )
         count, total_bytes, skipped = safe_extract_zip(content, workspace_dir)
+        if count == 0:
+            shutil.rmtree(workspace_dir, ignore_errors=True)
+            raise HTTPException(
+                status_code=400,
+                detail="The archive was extracted but contains no readable source files."
+            )
+
+        session = repo_store.index_workspace(
+            repo_id=repo_id,
+            repo_name=repo_name,
+            workspace_dir=workspace_dir,
+            source_type="zip",
+            source_url=None,
+            initial_skipped=skipped
+        )
+        return session.metadata
+    except HTTPException:
+        shutil.rmtree(workspace_dir, ignore_errors=True)
+        raise
     except ZipSecurityError as e:
         shutil.rmtree(workspace_dir, ignore_errors=True)
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         shutil.rmtree(workspace_dir, ignore_errors=True)
-        raise HTTPException(status_code=500, detail=f"Failed to extract ZIP: {str(e)}")
-
-    session = repo_store.index_workspace(
-        repo_id=repo_id,
-        repo_name=repo_name,
-        workspace_dir=workspace_dir,
-        source_type="zip",
-        source_url=None,
-        initial_skipped=skipped
-    )
-    return session.metadata
+        raise HTTPException(status_code=500, detail=f"Failed to process ZIP: {str(e)}")
 
 @router.post("/repositories/sample", response_model=RepositoryMetadata)
 def load_sample_repo():

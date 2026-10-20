@@ -10,67 +10,121 @@ import {
   LanguageCapability
 } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || '/api';
+
+async function handleResponseError(res: Response, defaultMessage: string): Promise<never> {
+  let message = defaultMessage;
+  try {
+    const errorData = await res.json();
+    if (errorData && typeof errorData.detail === 'string') {
+      message = errorData.detail;
+    } else if (errorData && typeof errorData.message === 'string') {
+      message = errorData.message;
+    }
+  } catch {
+    // If response is not JSON (e.g. 502 from proxy or 500 HTML)
+    if (res.status === 502) {
+      message = 'Backend server is unreachable (502 Bad Gateway). Please verify that the FastAPI backend is running on http://127.0.0.1:8000.';
+    } else if (res.status === 503) {
+      message = 'Backend service temporarily unavailable (503).';
+    } else if (res.status === 504) {
+      message = 'Gateway timeout (504). The repository download or indexing took too long.';
+    } else if (res.status === 413) {
+      message = 'Upload payload too large (413). File exceeds maximum upload limit.';
+    } else if (res.statusText) {
+      message = `${defaultMessage} (HTTP ${res.status}: ${res.statusText})`;
+    } else {
+      message = `${defaultMessage} (HTTP ${res.status})`;
+    }
+  }
+  throw new Error(message);
+}
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await fetch(`${API_BASE}/health`);
-  if (!res.ok) throw new Error('Failed to fetch system health');
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/health`);
+    if (!res.ok) await handleResponseError(res, 'Failed to fetch system health');
+    return res.json();
+  } catch (err: any) {
+    if (err.message && err.message.includes('Failed to fetch')) {
+      throw new Error('Unable to connect to TraceBench backend. Please ensure the server is running on http://127.0.0.1:8000.');
+    }
+    throw err;
+  }
 }
 
 export async function fetchRepositories(): Promise<RepositoryMetadata[]> {
-  const res = await fetch(`${API_BASE}/repositories`);
-  if (!res.ok) throw new Error('Failed to list repositories');
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/repositories`);
+    if (!res.ok) await handleResponseError(res, 'Failed to list repositories');
+    return res.json();
+  } catch (err: any) {
+    if (err.message && err.message.includes('Failed to fetch')) {
+      throw new Error('Unable to connect to TraceBench backend. Please ensure the server is running on http://127.0.0.1:8000.');
+    }
+    throw err;
+  }
 }
 
 export async function importGitHubRepo(url: string, branch?: string): Promise<RepositoryMetadata> {
-  const res = await fetch(`${API_BASE}/repositories/github`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url, branch: branch || undefined }),
-  });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ detail: 'Failed to import GitHub repo' }));
-    throw new Error(errorData.detail || 'GitHub import failed');
+  try {
+    const res = await fetch(`${API_BASE}/repositories/github`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, branch: branch || undefined }),
+    });
+    if (!res.ok) await handleResponseError(res, 'GitHub repository import failed');
+    return res.json();
+  } catch (err: any) {
+    if (err.message && err.message.includes('Failed to fetch')) {
+      throw new Error('Unable to connect to TraceBench backend. Please ensure the server is running on http://127.0.0.1:8000.');
+    }
+    throw err;
   }
-  return res.json();
 }
 
 export async function uploadZipRepo(file: File): Promise<RepositoryMetadata> {
-  const formData = new FormData();
-  formData.append('file', file);
-  const res = await fetch(`${API_BASE}/repositories/upload`, {
-    method: 'POST',
-    body: formData,
-  });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ detail: 'Failed to upload ZIP' }));
-    throw new Error(errorData.detail || 'ZIP upload failed');
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/repositories/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) await handleResponseError(res, 'ZIP archive upload failed');
+    return res.json();
+  } catch (err: any) {
+    if (err.message && err.message.includes('Failed to fetch')) {
+      throw new Error('Unable to connect to TraceBench backend. Please ensure the server is running on http://127.0.0.1:8000.');
+    }
+    throw err;
   }
-  return res.json();
 }
 
 export async function loadSampleRepo(): Promise<RepositoryMetadata> {
-  const res = await fetch(`${API_BASE}/repositories/sample`, {
-    method: 'POST',
-  });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ detail: 'Failed to load sample repo' }));
-    throw new Error(errorData.detail || 'Failed to load sample repository');
+  try {
+    const res = await fetch(`${API_BASE}/repositories/sample`, {
+      method: 'POST',
+    });
+    if (!res.ok) await handleResponseError(res, 'Failed to load sample repository');
+    return res.json();
+  } catch (err: any) {
+    if (err.message && err.message.includes('Failed to fetch')) {
+      throw new Error('Unable to connect to TraceBench backend. Please ensure the server is running on http://127.0.0.1:8000.');
+    }
+    throw err;
   }
-  return res.json();
 }
 
 export async function fetchRepository(repoId: string): Promise<RepositoryMetadata> {
   const res = await fetch(`${API_BASE}/repositories/${repoId}`);
-  if (!res.ok) throw new Error('Repository not found');
+  if (!res.ok) await handleResponseError(res, `Repository ${repoId} not found`);
   return res.json();
 }
 
 export async function fetchRepositoryFiles(repoId: string): Promise<IndexedFile[]> {
   const res = await fetch(`${API_BASE}/repositories/${repoId}/files`);
-  if (!res.ok) throw new Error('Failed to fetch repository files');
+  if (!res.ok) await handleResponseError(res, 'Failed to fetch repository files');
   return res.json();
 }
 
@@ -83,13 +137,13 @@ export async function fetchFileContent(repoId: string, path: string): Promise<{
   symbols: CodeSymbol[];
 }> {
   const res = await fetch(`${API_BASE}/repositories/${repoId}/files/content?path=${encodeURIComponent(path)}`);
-  if (!res.ok) throw new Error(`Failed to fetch file content for ${path}`);
+  if (!res.ok) await handleResponseError(res, `Failed to fetch file content for ${path}`);
   return res.json();
 }
 
 export async function fetchRepositoryLanguages(repoId: string): Promise<Record<string, LanguageCapability>> {
   const res = await fetch(`${API_BASE}/repositories/${repoId}/languages`);
-  if (!res.ok) throw new Error('Failed to fetch language capabilities');
+  if (!res.ok) await handleResponseError(res, 'Failed to fetch language capabilities');
   return res.json();
 }
 
@@ -98,7 +152,7 @@ export async function fetchRepositorySymbols(repoId: string, language?: string, 
   if (language) url += `language=${encodeURIComponent(language)}&`;
   if (filePath) url += `file_path=${encodeURIComponent(filePath)}&`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Failed to fetch symbols');
+  if (!res.ok) await handleResponseError(res, 'Failed to fetch symbols');
   return res.json();
 }
 
@@ -114,7 +168,7 @@ export async function fetchRepositoryGraph(
   if (nodeTypes && nodeTypes.length > 0) url += `node_types=${encodeURIComponent(nodeTypes.join(','))}&`;
   if (relationshipTypes && relationshipTypes.length > 0) url += `relationship_types=${encodeURIComponent(relationshipTypes.join(','))}&`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Failed to fetch repository graph');
+  if (!res.ok) await handleResponseError(res, 'Failed to fetch repository graph');
   return res.json();
 }
 
@@ -135,7 +189,7 @@ export async function searchRepository(
       language_filter: languageFilter || undefined,
     }),
   });
-  if (!res.ok) throw new Error('Search failed');
+  if (!res.ok) await handleResponseError(res, 'Search request failed');
   return res.json();
 }
 
@@ -154,10 +208,7 @@ export async function askRepositoryAI(
       top_k: topK,
     }),
   });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ detail: 'Failed to ask AI' }));
-    throw new Error(errorData.detail || 'Ask AI failed');
-  }
+  if (!res.ok) await handleResponseError(res, 'Ask AI request failed');
   return res.json();
 }
 
@@ -165,12 +216,12 @@ export async function evaluateRepository(repoId: string): Promise<EvaluationResu
   const res = await fetch(`${API_BASE}/repositories/${repoId}/evaluate`, {
     method: 'POST',
   });
-  if (!res.ok) throw new Error('Evaluation execution failed');
+  if (!res.ok) await handleResponseError(res, 'Evaluation execution failed');
   return res.json();
 }
 
 export async function fetchEvaluation(repoId: string): Promise<EvaluationResult> {
   const res = await fetch(`${API_BASE}/repositories/${repoId}/evaluation`);
-  if (!res.ok) throw new Error('Failed to retrieve evaluation results');
+  if (!res.ok) await handleResponseError(res, 'Failed to retrieve evaluation results');
   return res.json();
 }
