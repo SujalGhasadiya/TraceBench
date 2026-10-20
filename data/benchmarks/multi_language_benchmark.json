@@ -1,0 +1,112 @@
+[
+  {
+    "id": "py-01",
+    "question": "Where is the tax calculation function implemented?",
+    "repo_name": "sample_ecommerce",
+    "language": "python",
+    "expected_files": ["services/tax_calculator.py"],
+    "expected_symbols": ["calculate_tax"],
+    "expected_line_ranges": [[5, 20]],
+    "explanation": "calculate_tax function implements tax deduction logic in services/tax_calculator.py."
+  },
+  {
+    "id": "py-02",
+    "question": "Which class handles order processing and calls the payment gateway?",
+    "repo_name": "sample_ecommerce",
+    "language": "python",
+    "expected_files": ["services/order_service.py"],
+    "expected_symbols": ["OrderService", "OrderService.process_order"],
+    "expected_line_ranges": [[10, 45]],
+    "explanation": "OrderService class manages checkout and calls payment processing."
+  },
+  {
+    "id": "js-01",
+    "question": "Where is user JWT token validation handled?",
+    "repo_name": "sample_ecommerce",
+    "language": "javascript",
+    "expected_files": ["auth/jwt_validator.js"],
+    "expected_symbols": ["verifyToken"],
+    "expected_line_ranges": [[8, 30]],
+    "explanation": "verifyToken function verifies JWT signature and claims."
+  },
+  {
+    "id": "ts-01",
+    "question": "Where is the UserProfile interface defined?",
+    "repo_name": "sample_ecommerce",
+    "language": "typescript",
+    "expected_files": ["types/user.ts"],
+    "expected_symbols": ["UserProfile"],
+    "expected_line_ranges": [[1, 15]],
+    "explanation": "UserProfile interface specifies user attributes in TypeScript."
+  },
+  {
+    "id": "java-01",
+    "question": "Which class executes credit card payments?",
+    "repo_name": "sample_ecommerce",
+    "language": "java",
+    "expected_files": ["payments/PaymentProcessor.java"],
+    "expected_symbols": ["PaymentProcessor", "PaymentProcessor.executePayment"],
+    "expected_line_ranges": [[12, 50]],
+    "explanation": "PaymentProcessor contains executePayment method for processing transactions."
+  },
+  {
+    "id": "c-01",
+    "question": "Where is the network socket initialization implemented?",
+    "repo_name": "sample_ecommerce",
+    "language": "c",
+    "expected_files": ["network/socket_server.c"],
+    "expected_symbols": ["open_socket"],
+    "expected_line_ranges": [[15, 35]],
+    "explanation": "open_socket creates and binds server socket descriptor."
+  },
+  {
+    "id": "cpp-01",
+    "question": "Where is the database connection pool implemented?",
+    "repo_name": "sample_ecommerce",
+    "language": "cpp",
+    "expected_files": ["db/connection_pool.cpp"],
+    "expected_symbols": ["ConnectionPool", "ConnectionPool.acquire"],
+    "expected_line_ranges": [[10, 40]],
+    "explanation": "ConnectionPool manages reusable database connections."
+  },
+  {
+    "id": "go-01",
+    "question": "Where is the HTTP router started in the server?",
+    "repo_name": "sample_ecommerce",
+    "language": "go",
+    "expected_files": ["server/router.go"],
+    "expected_symbols": ["Router", "Router.ListenAndServe"],
+    "expected_line_ranges": [[18, 45]],
+    "explanation": "Router.ListenAndServe sets up HTTP routes and starts the listener."
+  },
+  {
+    "id": "rust-01",
+    "question": "Where is in-memory caching logic implemented?",
+    "repo_name": "sample_ecommerce",
+    "language": "rust",
+    "expected_files": ["cache/memory_cache.rs"],
+    "expected_symbols": ["Cache", "initialize_cache"],
+    "expected_line_ranges": [[7, 30]],
+    "explanation": "Cache struct and initialize_cache function provide HashMap-backed storage."
+  },
+  {
+    "id": "php-01",
+    "question": "Which controller handles user profile requests?",
+    "repo_name": "sample_ecommerce",
+    "language": "php",
+    "expected_files": ["controllers/UserController.php"],
+    "expected_symbols": ["UserController", "UserController.showProfile"],
+    "expected_line_ranges": [[10, 35]],
+    "explanation": "UserController handles HTTP request dispatch for profile views."
+  },
+  {
+    "id": "neg-01",
+    "question": "Where is the quantum teleportation algorithm implemented in this repository?",
+    "repo_name": "sample_ecommerce",
+    "language": "text",
+    "expected_files": [],
+    "expected_symbols": [],
+    "expected_line_ranges": [],
+    "explanation": "Negative test case: topic does not exist in repository; retrieval should return 0 relevant files."
+  }
+]
