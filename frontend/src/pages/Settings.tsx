@@ -3,7 +3,6 @@ import {
   Settings as SettingsIcon,
   Cpu,
   ShieldCheck,
-  Key,
   Layers,
   Database,
   CheckCircle2,
@@ -13,8 +12,8 @@ import {
   Network,
   Sparkles
 } from 'lucide-react';
-import { LanguageCapability, HealthResponse } from '../types';
-import { fetchRepositoryLanguages, fetchHealth } from '../api/client';
+import { LanguageCapability } from '../types';
+import { fetchRepositoryLanguages } from '../api/client';
 
 interface SettingsProps {
   repoId?: string;
@@ -22,13 +21,8 @@ interface SettingsProps {
 
 export const Settings: React.FC<SettingsProps> = ({ repoId }) => {
   const [capabilities, setCapabilities] = useState<Record<string, LanguageCapability>>({});
-  const [health, setHealth] = useState<HealthResponse | null>(null);
 
   useEffect(() => {
-    fetchHealth()
-      .then((h) => setHealth(h))
-      .catch((e) => console.error(e));
-
     if (repoId) {
       fetchRepositoryLanguages(repoId)
         .then((caps) => setCapabilities(caps))
@@ -146,52 +140,29 @@ export const Settings: React.FC<SettingsProps> = ({ repoId }) => {
         </div>
       </div>
 
-      {/* Gemini Configuration & Local Processing */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-sm space-y-3">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Key className="w-4 h-4 text-purple-600" />
-            Gemini API Configuration
-          </h3>
-          <p className="text-xs text-slate-600 leading-relaxed">
-            TraceBench utilizes the official Google Gen AI Python SDK. To activate live Gemini question answering:
-          </p>
-          <ol className="list-decimal list-inside text-xs text-slate-600 space-y-1.5 font-mono bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <li>Open or create <span className="text-blue-600">.env</span> in the repository root</li>
-            <li>Set <span className="text-slate-800">GEMINI_API_KEY=your_key_here</span></li>
-            <li>Restart the backend server (<code className="text-slate-700">python -m uvicorn backend.app.main:app</code>)</li>
-          </ol>
-          <p className="text-[11px] text-slate-400">
-            Current Status:{' '}
-            <span className={health?.gemini_configured ? 'text-emerald-600 font-semibold' : 'text-amber-600 font-semibold'}>
-              {health?.gemini_configured ? `Active (${health.gemini_model})` : 'Demo Mode (No API key provided)'}
-            </span>
-          </p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-sm space-y-3">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            Security & Execution Boundaries
-          </h3>
-          <p className="text-xs text-slate-600 leading-relaxed">
-            TraceBench is strictly designed for local security:
-          </p>
-          <ul className="text-xs text-slate-600 space-y-2">
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <span><strong>Zero Code Execution:</strong> Imported code is parsed only via AST grammars; it is never run or evaluated.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <span><strong>ZIP Path Traversal Defense:</strong> Archives are validated to prevent Zip Slip file system escapes.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <span><strong>Local Storage:</strong> Code and graphs are stored in local temporary workspaces (<code className="bg-slate-100 px-1 py-0.5 rounded">data/workspaces</code>).</span>
-            </li>
-          </ul>
-        </div>
+      {/* Security & Execution Boundaries */}
+      <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-sm space-y-3">
+        <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          Security & Execution Boundaries
+        </h3>
+        <p className="text-xs text-slate-600 leading-relaxed">
+          TraceBench is strictly designed for local security:
+        </p>
+        <ul className="text-xs text-slate-600 space-y-2">
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <span><strong>Zero Code Execution:</strong> Imported code is parsed only via AST grammars; it is never run or evaluated.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <span><strong>ZIP Path Traversal Defense:</strong> Archives are validated to prevent Zip Slip file system escapes.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <span><strong>Local Storage:</strong> Code and graphs are stored in local temporary workspaces (<code className="bg-slate-100 px-1 py-0.5 rounded">data/workspaces</code>).</span>
+          </li>
+        </ul>
       </div>
     </div>
   );

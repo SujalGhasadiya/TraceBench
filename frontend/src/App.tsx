@@ -96,8 +96,6 @@ export const App: React.FC = () => {
 
           <div className="flex items-center gap-3 text-xs text-slate-500">
             <span>TraceBench Core</span>
-            <span className="text-slate-300">•</span>
-            <span className="font-mono text-[11px] text-slate-400">Windows x64</span>
           </div>
         </header>
 

@@ -288,18 +288,7 @@ export const CodeGraph: React.FC<CodeGraphProps> = ({
           </div>
         )}
 
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-xs p-3 rounded-lg border border-slate-200 shadow-sm text-[11px] text-slate-600 space-y-1.5 z-10">
-          <div className="font-bold text-slate-800 text-xs mb-1">Relationship Legend</div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-0.5 bg-blue-600 inline-block" />
-            <span>Confirmed Containment / Import</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-0.5 bg-amber-500 border-t border-dashed inline-block" />
-            <span>Inferred Call / Reference</span>
-          </div>
-        </div>
+
       </div>
     </div>
   );

@@ -7,9 +7,7 @@ import {
   Sparkles,
   BarChart3,
   Settings,
-  Cpu,
-  CheckCircle2,
-  AlertTriangle
+  Cpu
 } from 'lucide-react';
 import { RepositoryMetadata, HealthResponse } from '../types';
 
@@ -49,11 +47,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Cpu className="w-4 h-4" />
           </div>
           <div>
-            <h1 className="font-bold text-base text-white tracking-tight flex items-center gap-1.5">
+            <h1 className="font-bold text-base text-white tracking-tight">
               TraceBench
-              <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                v1.0
-              </span>
             </h1>
             <p className="text-[11px] text-slate-400 font-medium">Understand any codebase with evidence</p>
           </div>
@@ -107,32 +102,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
       </nav>
-
-      {/* Footer System Status */}
-      <div className="p-3.5 border-t border-navy-850 bg-navy-900/60 text-[11px]">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-slate-400">Engine Health:</span>
-          <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Healthy
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="text-slate-400">AI Mode:</span>
-          {health?.gemini_configured ? (
-            <span className="inline-flex items-center gap-1 text-blue-400 font-medium">
-              <CheckCircle2 className="w-3 h-3" />
-              Live Gemini
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-amber-400 font-medium" title="API key not provided; operating in deterministic evidence summary mode">
-              <AlertTriangle className="w-3 h-3" />
-              Demo Mode
-            </span>
-          )}
-        </div>
-      </div>
     </aside>
   );
 };
