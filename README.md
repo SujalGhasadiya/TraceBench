@@ -41,45 +41,81 @@ TraceBench transparently reports language capabilities:
 
 ---
 
-## Installation & Startup on Windows
+## Quick Start (Direct Startup Commands)
+
+Whenever you want to run TraceBench, open two terminal windows in the repository root (`D:\Web Developement\TraceBench`):
+
+### Option 1: PowerShell (Recommended)
+
+- **Terminal 1 (Backend - Port 8000):**
+  ```powershell
+  .\start-backend.ps1
+  ```
+- **Terminal 2 (Frontend - Port 5173):**
+  ```powershell
+  .\start-frontend.ps1
+  ```
+
+---
+
+### Option 2: Command Prompt or Double-Click (.bat)
+
+- **Terminal 1 (Backend - Port 8000):**
+  ```cmd
+  start-backend.bat
+  ```
+  *(or double-click `start-backend.bat` in File Explorer)*
+
+- **Terminal 2 (Frontend - Port 5173):**
+  ```cmd
+  start-frontend.bat
+  ```
+  *(or double-click `start-frontend.bat` in File Explorer)*
+
+Once both servers are running, open your browser at:  
+👉 **`http://localhost:5173`**
+
+---
+
+## Installation & Setup Details
 
 ### Prerequisites
 - **Python 3.11+** installed on Windows.
 - **Node.js v18+** and **npm** installed.
 
-### 1. Backend Setup
-From the repository root (`D:\Web Developement\TraceBench`):
+### First-Time Dependency Installation
+
+Before running the project for the very first time, install the required packages:
 
 ```powershell
-# Set Python path in session (if not already in system PATH)
+# 1. Install backend Python dependencies
+& "C:\Users\HP\AppData\Local\Programs\Python\Python311\python.exe" -m pip install -r backend/requirements.txt
+
+# 2. Install frontend npm packages
+cd frontend
+npm install
+cd ..
+```
+
+---
+
+### Manual Terminal Commands (Alternative)
+
+If you prefer to start services manually without the helper scripts:
+
+#### 1. Backend Server
+```powershell
 $env:PATH = "C:\Users\HP\AppData\Local\Programs\Python\Python311;C:\Users\HP\AppData\Local\Programs\Python\Python311\Scripts;" + $env:PATH
 $env:PYTHONPATH = "."
 
-# Install backend dependencies
-pip install -r backend/requirements.txt
-
-# Run automated test suite (27 unit & integration tests)
-pytest backend/tests/ -v
-
 # Start the FastAPI backend server on port 8000
-python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
+Health check endpoint: `http://127.0.0.1:8000/api/health`
 
-The backend API will be live at `http://127.0.0.1:8000`. Test health:
-```powershell
-curl http://127.0.0.1:8000/api/health
-```
-
-### 2. Frontend Setup
-In a new terminal window:
-
+#### 2. Frontend Development Server
 ```powershell
 cd frontend
-
-# Install frontend dependencies
-npm install
-
-# Start Vite development server
 npm run dev
 ```
 
